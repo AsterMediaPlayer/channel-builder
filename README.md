@@ -29,7 +29,7 @@ after a blank line; Aster ignores everything before the first `aster:`.
 | `assets/site.css`, `assets/fonts/` | Aster's look; fonts are SIL OFL (texts beside them) |
 | `tests/channel-line.test.mjs` | The spec's five worked examples (character for character) and its acceptance rules |
 
-Run the tests with `node --test tests/`. There is no build step: GitHub Pages serves the files as they are.
+Run the tests with `node --test "tests/*.test.mjs"`. There is no build step: GitHub Pages serves the files as they are.
 
 ## Not in this version
 

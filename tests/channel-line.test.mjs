@@ -1,5 +1,5 @@
 // The spec's worked examples and acceptance checks, run against assets/channel-line.js.
-// node --test tests/
+// node --test "tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
