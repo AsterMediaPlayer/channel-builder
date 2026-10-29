@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Everything runs here in the browser: no server, no sign-in, no calls to Plex, nothing loaded from anywhere else. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Plex Channel Builder · Aster</title>
+<meta name="description" content="Turn a Plex video playlist into a TV-style channel in Aster: fill in the form, copy one line, and paste it into the playlist's description.">
+<meta name="theme-color" content="#5b3fd0">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="30" height="30">Channel Builder</a>
+    <span class="by-dot" aria-hidden="true">·</span>
+    <a class="by-aster" href="https://astermediaplayer.com/">by Aster</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <p class="eyebrow">For Plex</p>
+    <h1>Turn a Plex playlist into a <em>TV channel</em></h1>
+    <p class="lede">Fill in what you want below and copy the line it writes. Pasted into a Plex video playlist's description, it turns that playlist into a channel in Aster.</p>
+    <ol class="how">
+      <li>Choose your settings. Anything you leave alone keeps Aster's default.</li>
+      <li>Press <strong>Copy</strong>.</li>
+      <li>In Plex, open the video playlist, choose <strong>Edit</strong>, and paste it into the description (Summary).</li>
+      <li>Open Channels in Aster. The channel appears the next time the tab opens.</li>
+    </ol>
+  </section>
+
+  <div class="builder">
+    <form class="form" id="form" autocomplete="off" novalidate>
+
+      <fieldset>
+        <legend>Basics</legend>
+        <div class="field" data-field="number">
+          <label for="number">Number</label>
+          <input type="text" id="number" name="number" inputmode="numeric" placeholder="e.g. 7">
+          <p class="help">Leave it empty and Aster numbers it after your highest channel.</p>
+          <p class="err" data-err="number" hidden></p>
+        </div>
+        <div class="field" data-field="channelName">
+          <label for="channelName">Channel name</label>
+          <input type="text" id="channelName" name="channelName" placeholder="The playlist's own title">
+          <p class="help">Commas are fine.</p>
+          <p class="err" data-err="channelName" hidden></p>
+        </div>
+        <div class="field" data-field="group">
+          <label for="group">Group</label>
+          <input type="text" id="group" name="group" placeholder="e.g. Anime Night">
+          <p class="help">Puts the channel in a group in the guide.</p>
+          <p class="err" data-err="group" hidden></p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>What it plays</legend>
+        <p class="section-note">Leave this empty to play the playlist's own titles. Fill it to play everything in those genres, networks or collections; the playlist can then be empty.</p>
+        <p class="hint" data-hint="sources" hidden></p>
+        <div class="field" data-field="genres">
+          <label for="genres-input">Genres</label>
+          <div class="tags" data-list="genres" data-commas="no"><input type="text" id="genres-input" placeholder="Type a genre, then Enter"></div>
+          <p class="help">Spell it as Plex shows it.</p>
+          <p class="err" data-err="genres" hidden></p>
+        </div>
+        <div class="field" data-field="networks">
+          <label for="networks-input">Networks</label>
+          <div class="tags" data-list="networks" data-commas="yes"><input type="text" id="networks-input" placeholder="A TV network or movie studio, then Enter"></div>
+          <p class="help">Spell it as Plex shows it. Commas are fine; press Enter to add each one.</p>
+          <p class="err" data-err="networks" hidden></p>
+        </div>
+        <div class="field" data-field="collections">
+          <label for="collections-input">Collections</label>
+          <div class="tags" data-list="collections" data-commas="yes"><input type="text" id="collections-input" placeholder="A Plex collection, then Enter"></div>
+          <p class="help">Spell it as Plex shows it. Commas are fine; press Enter to add each one.</p>
+          <p class="err" data-err="collections" hidden></p>
+        </div>
+
+        <p class="hint" data-hint="narrow" hidden></p>
+        <div class="row2">
+          <div class="field" data-field="type">
+            <label for="type">Type</label>
+            <select id="type" name="type">
+              <option value="all">Movies &amp; Shows</option>
+              <option value="movies">Movies</option>
+              <option value="shows">Shows</option>
+            </select>
+          </div>
+          <div class="field" data-field="years">
+            <span class="label" id="years-label">Years</span>
+            <div class="pair" role="group" aria-labelledby="years-label">
+              <input type="text" id="yearFrom" name="yearFrom" inputmode="numeric" placeholder="From" aria-label="Years from">
+              <span>to</span>
+              <input type="text" id="yearTo" name="yearTo" inputmode="numeric" placeholder="To" aria-label="Years to">
+            </div>
+            <p class="err" data-err="yearFrom" hidden></p>
+            <p class="err" data-err="yearTo" hidden></p>
+          </div>
+        </div>
+        <div class="field" data-field="libraries">
+          <label for="libraries-input">Libraries</label>
+          <div class="tags" data-list="libraries" data-commas="no"><input type="text" id="libraries-input" placeholder="Empty means all libraries"></div>
+          <p class="help">Spell it as Plex shows it.</p>
+          <p class="err" data-err="libraries" hidden></p>
+        </div>
+        <div class="field" data-field="ratings">
+          <label for="ratings-input">Ratings</label>
+          <div class="tags" data-list="ratings" data-commas="no"><input type="text" id="ratings-input" placeholder="e.g. G, PG-13, TV-PG"></div>
+          <p class="help">Spell it as Plex shows it.</p>
+          <p class="err" data-err="ratings" hidden></p>
+        </div>
+        <div class="row2">
+          <div class="field" data-field="shortest">
+            <label for="shortest">Shortest, in minutes</label>
+            <input type="text" id="shortest" name="shortest" inputmode="numeric" placeholder="No limit">
+            <p class="err" data-err="shortest" hidden></p>
+          </div>
+          <div class="field" data-field="longest">
+            <label for="longest">Longest, in minutes</label>
+            <input type="text" id="longest" name="longest" inputmode="numeric" placeholder="No limit">
+            <p class="err" data-err="longest" hidden></p>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Schedule</legend>
+        <div class="field" data-field="mode">
+          <label for="mode">Mode</label>
+          <select id="mode" name="mode">
+            <option value="rotation">Rotation</option>
+            <option value="blocks">Blocks</option>
+            <option value="shuffle">Shuffle</option>
+            <option value="sequential">In Order</option>
+            <option value="airdate">Air Date</option>
+          </select>
+          <p class="help" id="mode-help"></p>
+        </div>
+        <div class="field" data-field="blocks" data-modes="blocks">
+          <span class="label" id="blocks-label">Episodes in a row</span>
+          <div class="pair" role="group" aria-labelledby="blocks-label">
+            <input type="text" id="blocksLow" name="blocksLow" inputmode="numeric" placeholder="2" aria-label="Fewest episodes in a row">
+            <span>to</span>
+            <input type="text" id="blocksHigh" name="blocksHigh" inputmode="numeric" placeholder="4" aria-label="Most episodes in a row">
+          </div>
+          <p class="help">Each turn, the channel picks a number between these (1 to 20).</p>
+          <p class="err" data-err="blocksLow" hidden></p>
+          <p class="err" data-err="blocksHigh" hidden></p>
+        </div>
+        <div class="row2" data-modes="rotation blocks shuffle">
+          <div class="field" data-field="reshuffle">
+            <label for="reshuffle">Reshuffle</label>
+            <select id="reshuffle" name="reshuffle">
+              <option value="day">Daily</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+            </select>
+          </div>
+          <div class="field" data-field="seed">
+            <label for="seed">Seed</label>
+            <div class="pair">
+              <input type="text" id="seed" name="seed" inputmode="numeric" placeholder="0">
+              <button type="button" class="btn ghost small" id="shuffle-again">Shuffle again</button>
+            </div>
+            <p class="err" data-err="seed" hidden></p>
+          </div>
+        </div>
+        <div class="field" data-field="weights" data-modes="rotation blocks">
+          <span class="label">Show weights</span>
+          <p class="help">Give a show more turns: 2 means twice as often as the others. Up to 5.</p>
+          <div class="weights" id="weights"></div>
+          <div><button type="button" class="btn ghost small" id="add-weight">Add a show</button></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Logo and bug</legend>
+        <label class="toggle"><input type="checkbox" id="logo" name="logo"> Use the playlist's picture as the channel's logo</label>
+        <label class="toggle"><input type="checkbox" id="bug" name="bug"> Show the logo in a corner while it plays</label>
+        <div class="bug-details" id="bug-details" hidden>
+          <div class="row2">
+            <div class="field">
+              <label for="bugLocation">Corner</label>
+              <select id="bugLocation" name="bugLocation">
+                <option value="top-left">Top left</option>
+                <option value="top-right">Top right</option>
+                <option value="bottom-left">Bottom left</option>
+                <option value="bottom-right" selected>Bottom right</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bugHide">Hide after</label>
+              <select id="bugHide" name="bugHide">
+                <option value="" selected>Never</option>
+                <option value="10">10 seconds</option>
+                <option value="30">30 seconds</option>
+                <option value="60">1 minute</option>
+                <option value="120">2 minutes</option>
+                <option value="300">5 minutes</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="bugSize">Size</label>
+            <div class="slider"><input type="range" id="bugSize" name="bugSize" min="25" max="300" step="5" value="100"><output for="bugSize" id="bugSize-out">100%</output></div>
+          </div>
+          <div class="field">
+            <label for="bugOpacity">Opacity</label>
+            <div class="slider"><input type="range" id="bugOpacity" name="bugOpacity" min="5" max="100" step="5" value="45"><output for="bugOpacity" id="bugOpacity-out">45%</output></div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Advanced</legend>
+        <div class="field" data-field="users">
+          <label for="users-input">Users</label>
+          <div class="tags" data-list="users" data-commas="no"><input type="text" id="users-input" placeholder="Empty means everyone"></div>
+          <p class="help">Spell it as Plex shows it. Only these people see the channel in Aster.</p>
+          <p class="err" data-err="users" hidden></p>
+        </div>
+        <div class="field" data-field="words">
+          <label for="words">Description words</label>
+          <textarea id="words" name="words" rows="3" placeholder="Optional: text for the playlist's description, above the settings"></textarea>
+          <p class="err" data-err="words" hidden></p>
+        </div>
+      </fieldset>
+    </form>
+
+    <aside class="output-panel" aria-labelledby="output-title">
+      <h2 id="output-title">Your line</h2>
+      <ul class="problems" id="problems" hidden></ul>
+      <textarea id="output" readonly rows="6" aria-label="The text to paste into the playlist's description">aster:channel</textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="copy">Copy</button>
+        <button type="button" class="btn ghost" id="reset">Reset</button>
+      </div>
+      <p class="paste-note">Paste it into the playlist's description in Plex: open the playlist, choose Edit, and paste.</p>
+    </aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Runs entirely in your browser: no sign-in, no server, and nothing is sent to Plex or anyone else.</p>
+    <p>Breaks and commercials aren't available on Plex channels yet, so they're not in this form. Made by <a href="https://astermediaplayer.com/">Aster Media Player</a>. Not affiliated with Plex.</p>
+  </div>
+</footer>
+<script src="assets/channel-line.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
