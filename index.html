@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- Everything runs here in the browser: no server, no sign-in, no calls to Plex, nothing loaded from anywhere else. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<!-- Everything runs here in the browser. The page loads nothing from anywhere else, and may only talk to plex.tv and
+     Plex servers' secure *.plex.direct addresses, and only after the user chooses to sign in. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src https://plex.tv https://*.plex.direct:*; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Plex Channel Builder · Aster</title>
 <meta name="description" content="Turn a Plex video playlist into a TV-style channel in Aster: fill in the form, copy one line, and paste it into the playlist's description.">
@@ -37,6 +38,31 @@
   <div class="builder">
     <form class="form" id="form" autocomplete="off" novalidate>
 
+      <fieldset class="plex" id="plex">
+        <legend>Your Plex library <span class="optional">optional</span></legend>
+        <div id="plex-out">
+          <p class="section-note">Sign in to pick genres, networks, collections and more from your own library, and to load a playlist's current settings. You can also just type everything.</p>
+          <div class="actions"><button type="button" class="btn" id="plex-signin">Sign in with Plex</button></div>
+          <p class="help">Your sign-in stays in this browser tab and goes only to Plex: there's no server here to send it to. It ends when you close the tab or sign out, and you can remove "Aster Channel Builder" any time under Authorized Devices on plex.tv. This page only reads from Plex; it never changes anything.</p>
+        </div>
+        <p class="help" id="plex-waiting" hidden>Finish signing in in the Plex window. This page will carry on by itself.</p>
+        <div id="plex-in" hidden>
+          <div class="signed-in"><span>Signed in as <strong id="plex-user"></strong></span><button type="button" class="btn ghost small" id="plex-signout">Sign out</button></div>
+          <div class="row2">
+            <div class="field">
+              <label for="plex-server">Server</label>
+              <select id="plex-server"></select>
+            </div>
+            <div class="field" id="plex-playlist-field" hidden>
+              <label for="plex-playlist">Playlist</label>
+              <select id="plex-playlist"></select>
+            </div>
+          </div>
+          <div class="actions" id="plex-load-row" hidden><button type="button" class="btn ghost small" id="plex-load">Load this playlist's settings</button></div>
+        </div>
+        <p class="plex-status" id="plex-status" role="status" hidden></p>
+      </fieldset>
+
       <fieldset>
         <legend>Basics</legend>
         <div class="field" data-field="number">
@@ -65,19 +91,19 @@
         <p class="hint" data-hint="sources" hidden></p>
         <div class="field" data-field="genres">
           <label for="genres-input">Genres</label>
-          <div class="tags" data-list="genres" data-commas="no"><input type="text" id="genres-input" placeholder="Type a genre, then Enter"></div>
+          <div class="tags" data-list="genres" data-commas="no"><input type="text" id="genres-input" list="genres-list" placeholder="Type a genre, then Enter"></div>
           <p class="help">Spell it as Plex shows it.</p>
           <p class="err" data-err="genres" hidden></p>
         </div>
         <div class="field" data-field="networks">
           <label for="networks-input">Networks</label>
-          <div class="tags" data-list="networks" data-commas="yes"><input type="text" id="networks-input" placeholder="A TV network or movie studio, then Enter"></div>
+          <div class="tags" data-list="networks" data-commas="yes"><input type="text" id="networks-input" list="networks-list" placeholder="A TV network or movie studio, then Enter"></div>
           <p class="help">Spell it as Plex shows it. Commas are fine; press Enter to add each one.</p>
           <p class="err" data-err="networks" hidden></p>
         </div>
         <div class="field" data-field="collections">
           <label for="collections-input">Collections</label>
-          <div class="tags" data-list="collections" data-commas="yes"><input type="text" id="collections-input" placeholder="A Plex collection, then Enter"></div>
+          <div class="tags" data-list="collections" data-commas="yes"><input type="text" id="collections-input" list="collections-list" placeholder="A Plex collection, then Enter"></div>
           <p class="help">Spell it as Plex shows it. Commas are fine; press Enter to add each one.</p>
           <p class="err" data-err="collections" hidden></p>
         </div>
@@ -105,13 +131,13 @@
         </div>
         <div class="field" data-field="libraries">
           <label for="libraries-input">Libraries</label>
-          <div class="tags" data-list="libraries" data-commas="no"><input type="text" id="libraries-input" placeholder="Empty means all libraries"></div>
+          <div class="tags" data-list="libraries" data-commas="no"><input type="text" id="libraries-input" list="libraries-list" placeholder="Empty means all libraries"></div>
           <p class="help">Spell it as Plex shows it.</p>
           <p class="err" data-err="libraries" hidden></p>
         </div>
         <div class="field" data-field="ratings">
           <label for="ratings-input">Ratings</label>
-          <div class="tags" data-list="ratings" data-commas="no"><input type="text" id="ratings-input" placeholder="e.g. G, PG-13, TV-PG"></div>
+          <div class="tags" data-list="ratings" data-commas="no"><input type="text" id="ratings-input" list="ratings-list" placeholder="e.g. G, PG-13, TV-PG"></div>
           <p class="help">Spell it as Plex shows it.</p>
           <p class="err" data-err="ratings" hidden></p>
         </div>
@@ -221,7 +247,7 @@
         <legend>Advanced</legend>
         <div class="field" data-field="users">
           <label for="users-input">Users</label>
-          <div class="tags" data-list="users" data-commas="no"><input type="text" id="users-input" placeholder="Empty means everyone"></div>
+          <div class="tags" data-list="users" data-commas="no"><input type="text" id="users-input" list="users-list" placeholder="Empty means everyone"></div>
           <p class="help">Spell it as Plex shows it. Only these people see the channel in Aster.</p>
           <p class="err" data-err="users" hidden></p>
         </div>
@@ -231,6 +257,9 @@
           <p class="err" data-err="words" hidden></p>
         </div>
       </fieldset>
+      <datalist id="genres-list"></datalist><datalist id="networks-list"></datalist><datalist id="collections-list"></datalist>
+      <datalist id="libraries-list"></datalist><datalist id="ratings-list"></datalist><datalist id="users-list"></datalist>
+      <datalist id="shows-list"></datalist>
     </form>
 
     <aside class="output-panel" aria-labelledby="output-title">
@@ -248,11 +277,13 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Runs entirely in your browser: no sign-in, no server, and nothing is sent to Plex or anyone else.</p>
+    <p>Runs entirely in your browser. There's no server behind this page: if you sign in with Plex, your sign-in and your library stay between your browser and Plex.</p>
     <p>Breaks and commercials aren't available on Plex channels yet, so they're not in this form. Made by <a href="https://astermediaplayer.com/">Aster Media Player</a>. Not affiliated with Plex.</p>
   </div>
 </footer>
 <script src="assets/channel-line.js"></script>
+<script src="assets/plex.js"></script>
 <script src="assets/app.js"></script>
+<script src="assets/plex-ui.js"></script>
 </body>
 </html>

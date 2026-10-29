@@ -316,5 +316,92 @@
         return line.split(/,\s*(?=aster:)/i);
     }
 
-    return { defaults: defaults, build: build, split: split, MODES: MODES };
+    // The other way round: a playlist description back into the form's state. Aster reads everything before the
+    // first aster: as plain words, then the settings line. Keys are read as Aster reads them (any case, the old
+    // asterfin: prefix too); values Aster would ignore are left at their defaults. Settings this form doesn't have
+    // (breaks, fillers, alignment) come back in `skipped` so the page can say they'll be dropped.
+    function parse(description) {
+        var text = String(description || '');
+        var s = defaults();
+        var skipped = [];
+        var at = text.search(/aster(fin)?:/i);
+        if (at < 0) {
+            s.words = text.trim();
+            return { state: s, skipped: skipped, found: false };
+        }
+        s.words = text.slice(0, at).trim();
+        var rest = text.slice(at);
+        var lineEnd = rest.search(/[\r\n]/);
+        var line = lineEnd < 0 ? rest : rest.slice(0, lineEnd);
+
+        function commaList(value) {
+            return (value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+        }
+        function intIn(value, min, max) {
+            var m = /^\s*(\d+)/.exec(value || '');
+            if (!m) { return null; }
+            var n = parseInt(m[1], 10);
+            return n >= min && n <= max ? n : null;
+        }
+        function rangeIn(value, min, max) {
+            var parts = (value || '').split('-');
+            var a = intIn(parts[0], min, max);
+            var b = parts.length > 1 ? intIn(parts[1], min, max) : a;
+            return a !== null && b !== null && parts.length <= 2 ? [Math.min(a, b), Math.max(a, b)] : null;
+        }
+        function on(value) {
+            return value === null || ['off', 'no', 'false', '0'].indexOf(value.trim().toLowerCase()) < 0;
+        }
+
+        line.split(/,\s*(?=aster(?:fin)?:)/i).forEach(function (entry) {
+            var m = /^\s*aster(?:fin)?:\s*([^=]+?)\s*(?:=(.*))?$/i.exec(entry);
+            if (!m) { return; }
+            var key = m[1].toLowerCase();
+            var value = m[2] === undefined ? null : m[2].trim();
+            var n, r;
+            switch (key) {
+                case 'channel': break;
+                case 'number': n = intIn(value, 1, 1e9); s.number = n === null ? '' : String(n); break;
+                case 'channel-name': s.channelName = value || ''; break;
+                case 'group': s.group = value || ''; break;
+                case 'genre': s.genres = s.genres.concat(commaList(value)); break;
+                case 'network': if (value) { s.networks.push(value); } break;
+                case 'collection': if (value) { s.collections.push(value); } break;
+                case 'library': s.libraries = s.libraries.concat(commaList(value)); break;
+                case 'rating': s.ratings = s.ratings.concat(commaList(value)); break;
+                case 'user': case 'users': s.users = s.users.concat(commaList(value)); break;
+                case 'type': if (TYPES.indexOf((value || '').toLowerCase()) >= 0) { s.type = value.toLowerCase(); } break;
+                case 'years': r = rangeIn(value, 1880, 2200); if (r) { s.yearFrom = String(r[0]); s.yearTo = String(r[1]); } break;
+                case 'min-length': n = intIn(value, 1, 600); s.shortest = n === null ? '' : String(n); break;
+                case 'max-length': n = intIn(value, 1, 600); s.longest = n === null ? '' : String(n); break;
+                case 'mode': if (MODES.indexOf((value || '').toLowerCase()) >= 0) { s.mode = value.toLowerCase(); } break;
+                case 'blocks': r = rangeIn(value, 1, 20); if (r) { s.blocksLow = String(r[0]); s.blocksHigh = String(r[1]); } break;
+                case 'reshuffle': if (RESHUFFLES.indexOf((value || '').toLowerCase()) >= 0) { s.reshuffle = value.toLowerCase(); } break;
+                case 'seed': n = intIn(value, 0, 1e9); s.seed = n === null || n === 0 ? '' : String(n); break;
+                case 'weight':
+                    var colon = (value || '').lastIndexOf(':');
+                    n = colon > 0 ? intIn(value.slice(colon + 1), 1, 1e9) : null;
+                    if (n !== null) {
+                        s.weights.push({ show: value.slice(0, colon).trim(), weight: String(Math.min(n, 5)) });
+                    }
+                    break;
+                case 'logo': s.logo = on(value); break;
+                case 'bug': s.bug = on(value); break;
+                case 'bug-location': if (CORNERS.indexOf((value || '').toLowerCase()) >= 0) { s.bugLocation = value.toLowerCase(); } break;
+                case 'bug-size': n = intIn(value, 25, 300); if (n !== null) { s.bugSize = n; } break;
+                case 'bug-opacity': n = intIn(value, 5, 100); if (n !== null) { s.bugOpacity = n; } break;
+                case 'bug-hide': n = intIn(value, 1, 3600); s.bugHide = n === null ? '' : String(n); break;
+                default: skipped.push(key);
+            }
+        });
+        // A range at Aster's default reads back as empty boxes, as a fresh form would have them.
+        if (s.blocksLow === '2' && s.blocksHigh === '4') { s.blocksLow = ''; s.blocksHigh = ''; }
+        if (s.yearFrom && s.yearFrom === s.yearTo) { s.yearTo = ''; }
+        if (s.blocksLow && s.blocksLow === s.blocksHigh) { s.blocksHigh = ''; }
+        s.genres = tidyList(s.genres); s.libraries = tidyList(s.libraries); s.ratings = tidyList(s.ratings);
+        s.users = tidyList(s.users); s.networks = tidyList(s.networks); s.collections = tidyList(s.collections);
+        return { state: s, skipped: skipped.filter(function (k, i) { return skipped.indexOf(k) === i; }), found: true };
+    }
+
+    return { defaults: defaults, build: build, split: split, parse: parse, MODES: MODES };
 });

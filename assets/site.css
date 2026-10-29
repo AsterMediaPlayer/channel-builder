@@ -124,3 +124,10 @@ input:hover, select:hover, textarea:hover { border-color: var(--muted); }
 /* Footer */
 .site-footer { border-top: 1px solid var(--line); padding-block: 22px 32px; color: var(--muted); font-size: 0.88rem; }
 .site-footer p { margin: 0 0 6px; max-width: 52rem; }
+
+/* Your Plex library (optional sign-in) */
+.plex { border-style: dashed; }
+.optional { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--petal); background: var(--petal-soft); border-radius: 999px; padding: 3px 8px; vertical-align: middle; margin-left: 4px; }
+.signed-in { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.plex-status { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.plex-status.bad { color: var(--err); font-weight: 700; }

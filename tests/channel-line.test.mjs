@@ -104,3 +104,42 @@ test('hints: narrowing fields alone, and source fields', () => {
   assert.ok(!build({ ratings: ['PG'], genres: ['Comedy'] }).hints.narrow);
   assert.ok(build({ genres: ['Comedy'] }).hints.sources);
 });
+
+// ---- reading a description back (parse) ----------------------------------------------------------------------
+
+const { parse } = createRequire(import.meta.url)('../assets/channel-line.js');
+
+for (const [name, state, expected] of examples) {
+  test(`read back: worked example ${name} round-trips exactly`, () => {
+    const back = parse(expected);
+    assert.equal(back.found, true);
+    assert.deepEqual(back.skipped, []);
+    assert.equal(build(back.state).output, expected);
+  });
+}
+
+test("read back: Aster's long form (every default spelled out) becomes the short form", () => {
+  const long = 'aster:channel, aster:number=7, aster:mode=shuffle, aster:reshuffle=week, aster:blocks=2-4, aster:seed=0, ' +
+    'aster:logo=on, aster:bug=off, aster:bug-location=bottom-right, aster:bug-size=100%, aster:bug-hide=off, aster:bug-opacity=45%, aster:type=all';
+  assert.equal(build(parse(long).state).output, 'aster:channel, aster:number=7, aster:mode=shuffle, aster:reshuffle=week, aster:logo=on');
+});
+
+test('read back: words above, old asterfin: prefix, any case, comma lists', () => {
+  const r = parse('Saturday cartoons.\nAsterFin:Channel, ASTER:Number=12, aster:genre=Animation, Comedy, aster:user=alice,bob');
+  assert.equal(r.state.words, 'Saturday cartoons.');
+  assert.equal(r.state.number, '12');
+  assert.deepEqual(r.state.genres, ['Animation', 'Comedy']);
+  assert.deepEqual(r.state.users, ['alice', 'bob']);
+});
+
+test('read back: settings this form lacks are reported, not kept', () => {
+  const r = parse('aster:channel, aster:filler-playlists=Retro Ads, aster:break-length=3, aster:mode=blocks');
+  assert.deepEqual(r.skipped, ['filler-playlists', 'break-length']);
+  assert.equal(build(r.state).output, 'aster:channel, aster:mode=blocks');
+});
+
+test('read back: no settings at all means plain words', () => {
+  const r = parse('Just a playlist of favourites.');
+  assert.equal(r.found, false);
+  assert.equal(r.state.words, 'Just a playlist of favourites.');
+});

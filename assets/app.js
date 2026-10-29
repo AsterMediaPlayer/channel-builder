@@ -82,7 +82,13 @@
                 update();
             }
         });
-        input.addEventListener('input', function () {
+        input.addEventListener('input', function (e) {
+            // Picking one of the library's suggestions adds it straight away.
+            if (e.inputType === 'insertReplacementText' || (e.inputType === undefined && isSuggestion(input))) {
+                commit(name);
+                update();
+                return;
+            }
             // In "no commas" lists a comma finishes the current item (this also splits pasted lists).
             if (!lists[name].commas && input.value.indexOf(',') >= 0) {
                 var parts = input.value.split(',');
@@ -102,6 +108,12 @@
             }
         });
     });
+
+    function isSuggestion(input) {
+        var list = input.list;
+        var v = input.value;
+        return !!(list && v && Array.prototype.some.call(list.options, function (o) { return o.value === v; }));
+    }
 
     // The typed-but-not-yet-added text counts too, so the line updates on every keystroke.
     function listValue(name) {
@@ -125,6 +137,7 @@
             show.placeholder = 'Show name';
             show.value = row.show;
             show.setAttribute('aria-label', 'Show name ' + (i + 1));
+            show.setAttribute('list', 'shows-list');
             show.addEventListener('input', function () { row.show = show.value; update(); });
             var weight = document.createElement('input');
             weight.type = 'text';
@@ -237,6 +250,34 @@
         seed.value = String((isNaN(n) || n < 0 ? 0 : n) + 1);
         update();
     });
+
+    // Puts a whole state into the form, as if typed in.
+    function setForm(s) {
+        ['number', 'channelName', 'group', 'yearFrom', 'yearTo', 'shortest', 'longest', 'blocksLow', 'blocksHigh', 'seed', 'words']
+            .forEach(function (id) { document.getElementById(id).value = s[id] || ''; });
+        ['type', 'mode', 'reshuffle', 'bugLocation'].forEach(function (id) { document.getElementById(id).value = s[id]; });
+        var hide = document.getElementById('bugHide');
+        if (s.bugHide && !Array.prototype.some.call(hide.options, function (o) { return o.value === String(s.bugHide); })) {
+            var opt = document.createElement('option');
+            opt.value = String(s.bugHide);
+            opt.textContent = s.bugHide + ' seconds';
+            hide.appendChild(opt);
+        }
+        hide.value = s.bugHide || '';
+        document.getElementById('bugSize').value = s.bugSize;
+        document.getElementById('bugOpacity').value = s.bugOpacity;
+        document.getElementById('logo').checked = !!s.logo;
+        document.getElementById('bug').checked = !!s.bug;
+        Object.keys(lists).forEach(function (name) {
+            lists[name].items = (s[name] || []).slice();
+            lists[name].input.value = '';
+            renderTags(name);
+        });
+        weights = (s.weights || []).map(function (w) { return { show: w.show, weight: w.weight }; });
+        renderWeights();
+        update();
+    }
+    window.ChannelBuilderForm = { setForm: setForm };
 
     // ---- copy and reset --------------------------------------------------------------------------------------------
 
