@@ -224,7 +224,7 @@
                 .then(json)
                 .then(function (data) {
                     return ((data.MediaContainer || {}).Metadata || []).map(function (m) {
-                        return { key: m.ratingKey, title: m.title, year: m.year, kind: d.type === 'show' ? 'Show' : 'Movie', library: d.title };
+                        return { key: m.ratingKey, title: m.title, year: m.year, kind: d.type === 'show' ? 'Show' : 'Movie', library: d.title, episodes: m.leafCount };
                     });
                 }, function () { return []; });
         })).then(function (lists) {
@@ -247,6 +247,69 @@
         });
     }
 
+    // What a playlist holds, grouped as people think of it: shows (with how many of their episodes are in it),
+    // movies, and anything else (clips, music videos), counted.
+    function playlistContents(conn, playlistId) {
+        return fetch(conn.uri + '/playlists/' + encodeURIComponent(playlistId) + '/items',
+            { headers: Object.assign(headers(conn.token), { 'X-Plex-Container-Start': '0', 'X-Plex-Container-Size': '100000' }) })
+            .then(json)
+            .then(function (data) {
+                var items = (data.MediaContainer || {}).Metadata || [];
+                var shows = {};
+                var order = [];
+                var movies = [];
+                var other = [];
+                items.forEach(function (m) {
+                    if (m.type === 'episode' && m.grandparentRatingKey) {
+                        var k = String(m.grandparentRatingKey);
+                        if (!shows[k]) {
+                            shows[k] = { key: k, title: m.grandparentTitle || 'Unknown show', itemIds: [], inPlaylist: 0, episodes: null };
+                            order.push(k);
+                        }
+                        shows[k].itemIds.push(m.playlistItemID);
+                        shows[k].inPlaylist += 1;
+                    } else if (m.type === 'movie') {
+                        movies.push({ key: String(m.ratingKey), title: m.title, year: m.year, itemIds: [m.playlistItemID] });
+                    } else {
+                        other.push({ title: m.title, type: m.type, itemIds: [m.playlistItemID] });
+                    }
+                });
+                var showList = order.map(function (k) { return shows[k]; });
+                // Each show's total episode count, 50 at a time, so "12 of 84 episodes" can be shown.
+                var batches = [];
+                for (var i = 0; i < showList.length; i += 50) { batches.push(showList.slice(i, i + 50)); }
+                return Promise.all(batches.map(function (batch) {
+                    return get(conn, '/library/metadata/' + batch.map(function (sh) { return encodeURIComponent(sh.key); }).join(','))
+                        .then(function (mc) {
+                            (mc.Metadata || []).forEach(function (m) {
+                                if (shows[String(m.ratingKey)]) { shows[String(m.ratingKey)].episodes = m.leafCount; }
+                            });
+                        }, function () { /* counts are a nicety */ });
+                })).then(function () {
+                    var byTitle = function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }); };
+                    return { shows: showList.sort(byTitle), movies: movies.sort(byTitle), other: other, total: items.length };
+                });
+            });
+    }
+
+    // WRITES: takes items out of a playlist, a few at a time (Plex removes one playlist item per request).
+    function removeItems(conn, playlistId, itemIds) {
+        var queue = itemIds.slice();
+        var base = '/playlists/' + encodeURIComponent(playlistId) + '/items/';
+        function worker() {
+            var next = queue.shift();
+            if (next === undefined) { return Promise.resolve(); }
+            return send(conn, 'DELETE', base + encodeURIComponent(next)).then(worker);
+        }
+        return Promise.all([worker(), worker(), worker(), worker()]);
+    }
+
+    // WRITES: adds whole shows (all their episodes) and movies to the end of a playlist.
+    function addItems(conn, playlistId, keys) {
+        if (!keys.length) { return Promise.resolve(); }
+        return send(conn, 'PUT', '/playlists/' + encodeURIComponent(playlistId) + '/items?uri=' + encodeURIComponent(itemsUri(conn, keys)));
+    }
+
     // WRITES: replaces a playlist's description (Plex calls it the summary).
     function saveDescription(conn, playlistId, text) {
         return send(conn, 'PUT', '/playlists/' + encodeURIComponent(playlistId) + '?summary=' + encodeURIComponent(text));
@@ -266,6 +329,7 @@
     root.Plex = {
         getToken: getToken, signIn: signIn, signOut: signOut, account: account, servers: servers,
         connect: connect, library: library, users: users, playlists: playlists, search: search,
-        saveDescription: saveDescription, createChannel: createChannel
+        saveDescription: saveDescription, createChannel: createChannel,
+        playlistContents: playlistContents, removeItems: removeItems, addItems: addItems
     };
 })(window);

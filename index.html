@@ -64,6 +64,22 @@
           </div>
           <p class="help" id="plex-readonly" hidden>This server is shared with you, so you can use its names but can't save or create playlists on it.</p>
 
+          <div class="contents" id="plex-contents" hidden>
+            <h3>What's in this playlist</h3>
+            <p class="help" id="plex-contents-summary" role="status"></p>
+            <ul class="content-list" id="plex-contents-list"></ul>
+            <div class="field" id="plex-edit-add" hidden>
+              <label for="plex-edit-search">Add shows or movies</label>
+              <input type="text" id="plex-edit-search" placeholder="Search your library">
+              <p class="help">A show adds all its episodes, at the end of the playlist.</p>
+              <ul class="results" id="plex-edit-results" hidden></ul>
+            </div>
+            <div class="actions" id="plex-contents-actions" hidden>
+              <button type="button" class="btn small" id="plex-contents-save">Save playlist changes</button>
+              <button type="button" class="btn ghost small" id="plex-contents-discard">Discard changes</button>
+            </div>
+          </div>
+
           <div class="new-channel" id="plex-new" hidden>
             <div class="field" data-field="newTitle">
               <label for="plex-new-title">New playlist's name</label>

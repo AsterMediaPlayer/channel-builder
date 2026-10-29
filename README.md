@@ -12,6 +12,8 @@ Signing in fills every name box with suggestions from your own library (genres, 
 libraries, ratings, Home users, and shows for weights), and can load a playlist's current settings into the form.
 On servers you own it can also **save the line to a playlist** and **create a new channel playlist**: empty for a
 genre, network or collection channel (it fills itself), or with whole shows and movies found by searching the library.
+Choosing a playlist also shows **what's in it**, grouped as shows (with "12 of 84 episodes" when only some are in it),
+movies and other videos; on your own servers you can take shows and movies out and add more by searching.
 Typing everything by hand, and copying the line, works without it.
 
 - **Plex's PIN sign-in** (the same link-code flow apps use): a pop-up to plex.tv, then the page picks up the token.

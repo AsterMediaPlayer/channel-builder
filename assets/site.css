@@ -145,3 +145,15 @@ input:hover, select:hover, textarea:hover { border-color: var(--muted); }
 .confirm p { margin: 0; }
 .confirm .label { font-weight: 700; font-size: 0.9rem; }
 .confirm pre { margin: 0; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-family: var(--font-mono); font-size: 0.82rem; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 14rem; overflow-y: auto; }
+
+/* What's in a playlist */
+.contents { display: grid; gap: 12px; padding: 16px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); }
+.contents h3 { font-size: 1.1rem; }
+.content-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 24rem; overflow-y: auto; }
+.content-list .group { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.content-list .item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 12px; }
+.content-list .item span { min-width: 0; overflow-wrap: anywhere; }
+.content-list .item small { color: var(--muted); }
+.content-list .item.removing span { text-decoration: line-through; color: var(--muted); }
+.content-list .item.adding { border-style: dashed; border-color: var(--petal); }
+.content-list .tag-note { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--petal); margin-left: 6px; }
