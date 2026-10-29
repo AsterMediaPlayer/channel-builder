@@ -277,7 +277,7 @@
         renderWeights();
         update();
     }
-    window.ChannelBuilderForm = { setForm: setForm };
+    window.ChannelBuilderForm = { setForm: setForm, result: function () { return window.ChannelLine.build(state()); } };
 
     // ---- copy and reset --------------------------------------------------------------------------------------------
 

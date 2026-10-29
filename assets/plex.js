@@ -3,7 +3,10 @@
  *
  * Talks only to plex.tv and to the user's own Plex servers over their secure *.plex.direct addresses (the page's
  * content-security policy allows nothing else). The sign-in token is kept in sessionStorage, so it lasts until the
- * tab is closed or the user signs out, and is sent nowhere but plex.tv and those servers. Nothing here writes to Plex.
+ * tab is closed or the user signs out, and is sent nowhere but plex.tv and those servers.
+ *
+ * Writing (creating a playlist, adding titles, saving its description) only happens through the functions marked
+ * WRITES below, which the page calls only after the user has confirmed exactly what will change.
  */
 (function (root) {
     'use strict';
@@ -185,6 +188,7 @@
             return Promise.all(jobs).then(function (res) {
                 function col(i) { return uniqueSorted(res.map(function (r) { return r[i]; })); }
                 return {
+                    sections: sections.map(function (d) { return { key: d.key, type: d.type, title: d.title }; }),
                     libraries: uniqueSorted([sections.map(function (d) { return d.title; })]),
                     genres: col(0), collections: col(1), networks: col(2), ratings: col(3), shows: col(4)
                 };
@@ -210,8 +214,58 @@
         });
     }
 
+    // Shows and movies whose title contains the text, from the movie and TV libraries (for "Add shows or movies").
+    function search(conn, sections, text) {
+        var q = encodeURIComponent(text);
+        return Promise.all(sections.map(function (d) {
+            var type = d.type === 'show' ? 2 : 1;
+            return fetch(conn.uri + '/library/sections/' + encodeURIComponent(d.key) + '/all?type=' + type + '&title=' + q,
+                { headers: Object.assign(headers(conn.token), { 'X-Plex-Container-Start': '0', 'X-Plex-Container-Size': '25' }) })
+                .then(json)
+                .then(function (data) {
+                    return ((data.MediaContainer || {}).Metadata || []).map(function (m) {
+                        return { key: m.ratingKey, title: m.title, year: m.year, kind: d.type === 'show' ? 'Show' : 'Movie', library: d.title };
+                    });
+                }, function () { return []; });
+        })).then(function (lists) {
+            return [].concat.apply([], lists).sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }); }).slice(0, 40);
+        });
+    }
+
+    function itemsUri(conn, keys) {
+        return 'server://' + conn.machine + '/com.plexapp.plugins.library/library/metadata/' + keys.map(encodeURIComponent).join(',');
+    }
+
+    function send(conn, method, path) {
+        return fetch(conn.uri + path, { method: method, headers: headers(conn.token) }).then(function (r) {
+            if (!r.ok) {
+                var err = new Error('Plex answered ' + r.status);
+                err.status = r.status;
+                throw err;
+            }
+            return r.status === 204 ? null : r.json().catch(function () { return null; });
+        });
+    }
+
+    // WRITES: replaces a playlist's description (Plex calls it the summary).
+    function saveDescription(conn, playlistId, text) {
+        return send(conn, 'PUT', '/playlists/' + encodeURIComponent(playlistId) + '?summary=' + encodeURIComponent(text));
+    }
+
+    // WRITES: makes a new video playlist, empty or with whole shows and movies, and gives it its description.
+    // Plex only makes a playlist from a list of titles; naming the server with no title gives an empty one.
+    function createChannel(conn, title, keys, description) {
+        var path = '/playlists?type=video&smart=0&title=' + encodeURIComponent(title) + '&uri=' + encodeURIComponent(itemsUri(conn, keys));
+        return send(conn, 'POST', path).then(function (data) {
+            var made = data && data.MediaContainer && (data.MediaContainer.Metadata || [])[0];
+            if (!made || !made.ratingKey) { throw new Error("Plex didn't say which playlist it made."); }
+            return saveDescription(conn, made.ratingKey, description).then(function () { return made.ratingKey; });
+        });
+    }
+
     root.Plex = {
         getToken: getToken, signIn: signIn, signOut: signOut, account: account, servers: servers,
-        connect: connect, library: library, users: users, playlists: playlists
+        connect: connect, library: library, users: users, playlists: playlists, search: search,
+        saveDescription: saveDescription, createChannel: createChannel
     };
 })(window);

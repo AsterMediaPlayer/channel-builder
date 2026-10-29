@@ -6,11 +6,13 @@ description (Summary) in Plex.
 
 It runs entirely in the browser. There is no server behind it, and nothing is loaded from anywhere else.
 
-## Sign in with Plex (optional, read-only)
+## Sign in with Plex (optional)
 
 Signing in fills every name box with suggestions from your own library (genres, networks and studios, collections,
 libraries, ratings, Home users, and shows for weights), and can load a playlist's current settings into the form.
-Typing everything by hand works without it.
+On servers you own it can also **save the line to a playlist** and **create a new channel playlist**: empty for a
+genre, network or collection channel (it fills itself), or with whole shows and movies found by searching the library.
+Typing everything by hand, and copying the line, works without it.
 
 - **Plex's PIN sign-in** (the same link-code flow apps use): a pop-up to plex.tv, then the page picks up the token.
 - **The token stays in the tab** (`sessionStorage`): it ends when the tab closes or on **Sign out**, and goes only to
@@ -19,7 +21,9 @@ Typing everything by hand works without it.
 - **The page may talk only to `https://plex.tv` and `https://*.plex.direct`** (its content-security policy), and
   only after you choose to sign in. Servers are reached over their secure plex.direct addresses; a server with
   Secure connections set to Disabled can't be reached from an https page.
-- **Read-only.** Nothing here changes anything in Plex.
+- **Nothing changes without a confirm step.** Save and Create first show exactly what will happen: the playlist, the
+  description it has now, and the one it will get. Only then does the page write, and only on servers you own.
+  Servers shared with you are read-only here.
 - Plex tokens can't be limited to reading, so the page's own code is what keeps them safe: no outside scripts, and
   every name from Plex is shown as plain text, never as HTML. Changes to this repository should go through review.
 
@@ -42,7 +46,7 @@ after a blank line; Aster ignores everything before the first `aster:`.
 | `index.html` | The page |
 | `assets/channel-line.js` | Builds the line from the form's choices. Pure, no DOM, so it's tested directly |
 | `assets/app.js` | The form: tag lists, show weights, live preview, Copy and Reset |
-| `assets/plex.js` | The optional Plex sign-in and library reading (read-only) |
+| `assets/plex.js` | The optional Plex sign-in, library reading, and the confirmed writes (save, create) |
 | `assets/plex-ui.js` | The "Your Plex library" section of the page |
 | `assets/site.css`, `assets/fonts/` | Aster's look; fonts are SIL OFL (texts beside them) |
 | `tests/channel-line.test.mjs` | The spec's five worked examples (character for character), its acceptance rules, and reading a description back |
@@ -51,5 +55,4 @@ Run the tests with `node --test "tests/*.test.mjs"`. There is no build step: Git
 
 ## Not in this version
 
-Breaks and commercials (Aster can't play them on Plex yet), and writing the line into a playlist for you (planned
-next: a "Save to playlist" button).
+Breaks and commercials (Aster can't play them on Plex yet).

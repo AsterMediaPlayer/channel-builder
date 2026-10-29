@@ -43,7 +43,7 @@
         <div id="plex-out">
           <p class="section-note">Sign in to pick genres, networks, collections and more from your own library, and to load a playlist's current settings. You can also just type everything.</p>
           <div class="actions"><button type="button" class="btn" id="plex-signin">Sign in with Plex</button></div>
-          <p class="help">Your sign-in stays in this browser tab and goes only to Plex: there's no server here to send it to. It ends when you close the tab or sign out, and you can remove "Aster Channel Builder" any time under Authorized Devices on plex.tv. This page only reads from Plex; it never changes anything.</p>
+          <p class="help">Your sign-in stays in this browser tab and goes only to Plex: there's no server here to send it to. It ends when you close the tab or sign out, and you can remove "Aster Channel Builder" any time under Authorized Devices on plex.tv. Nothing in Plex changes unless you press Save or Create and confirm.</p>
         </div>
         <p class="help" id="plex-waiting" hidden>Finish signing in in the Plex window. This page will carry on by itself.</p>
         <div id="plex-in" hidden>
@@ -58,7 +58,42 @@
               <select id="plex-playlist"></select>
             </div>
           </div>
-          <div class="actions" id="plex-load-row" hidden><button type="button" class="btn ghost small" id="plex-load">Load this playlist's settings</button></div>
+          <div class="actions" id="plex-load-row" hidden>
+            <button type="button" class="btn ghost small" id="plex-load">Load this playlist's settings</button>
+            <button type="button" class="btn small" id="plex-save">Save to this playlist</button>
+          </div>
+          <p class="help" id="plex-readonly" hidden>This server is shared with you, so you can use its names but can't save or create playlists on it.</p>
+
+          <div class="new-channel" id="plex-new" hidden>
+            <div class="field" data-field="newTitle">
+              <label for="plex-new-title">New playlist's name</label>
+              <input type="text" id="plex-new-title" placeholder="e.g. Saturday Cartoons">
+              <p class="err" id="plex-new-title-err" hidden></p>
+            </div>
+            <div class="field">
+              <label for="plex-search">Add shows or movies <span class="optional">optional</span></label>
+              <input type="text" id="plex-search" placeholder="Search your library">
+              <p class="help">For a channel of particular shows or movies. Leave it empty for a genre, network or collection channel: the playlist then fills itself. A show adds all its episodes.</p>
+              <ul class="results" id="plex-results" hidden></ul>
+              <ul class="picked" id="plex-picked" hidden></ul>
+            </div>
+            <div class="actions"><button type="button" class="btn small" id="plex-create">Create channel</button></div>
+          </div>
+
+          <div class="confirm" id="plex-confirm" hidden role="alertdialog" aria-labelledby="plex-confirm-title">
+            <h3 id="plex-confirm-title"></h3>
+            <p id="plex-confirm-what"></p>
+            <div id="plex-confirm-before-box" hidden>
+              <p class="label">Its description now</p>
+              <pre id="plex-confirm-before"></pre>
+            </div>
+            <p class="label" id="plex-confirm-after-label">Its new description</p>
+            <pre id="plex-confirm-after"></pre>
+            <div class="actions">
+              <button type="button" class="btn" id="plex-confirm-yes"></button>
+              <button type="button" class="btn ghost" id="plex-confirm-no">Cancel</button>
+            </div>
+          </div>
         </div>
         <p class="plex-status" id="plex-status" role="status" hidden></p>
       </fieldset>
